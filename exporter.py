@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Optional
-from urllib.parse import quote
 
 VERSION = "1.0.0"
 
@@ -151,11 +150,11 @@ class Source:
     def connect(self) -> sqlite3.Connection:
         if not self.db_path.exists():
             raise FileNotFoundError(f"database not found: {self.db_path}")
-        quoted = quote(self.db_path.as_posix(), safe="/:")
+        base_uri = self.db_path.resolve().as_uri()
         last_error: Optional[Exception] = None
         for suffix in ("?mode=ro", "?mode=ro&immutable=1"):
             try:
-                con = sqlite3.connect(f"file:{quoted}{suffix}", uri=True, timeout=30)
+                con = sqlite3.connect(f"{base_uri}{suffix}", uri=True, timeout=30)
                 con.row_factory = sqlite3.Row
                 con.execute("PRAGMA query_only = 1")
                 con.execute("PRAGMA busy_timeout = 30000")

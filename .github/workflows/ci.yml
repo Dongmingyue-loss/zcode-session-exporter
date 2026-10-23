@@ -51,8 +51,6 @@ jobs:
           fi
       - name: Generate demo database
         run: python scripts/make_demo_db.py
-      - name: Debug demo database
-        run: python -u -c "from pathlib import Path; from exporter import Source; s=Source('demo','Demo',Path('demo/demo.sqlite')); print('exists', s.db_path.exists()); print('uri', s.db_path.resolve().as_uri()); print('validate start'); print(s.validate()); print('validate done'); c=s.connect(); print('connected'); print(c.execute('select count(*) from session').fetchone()); c.close(); print('closed')"
       - name: Headless browser smoke test
         run: python test/ui_smoke.py
       - name: Upload screenshots

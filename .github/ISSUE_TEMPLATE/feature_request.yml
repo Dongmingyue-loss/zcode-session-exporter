@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an improvement for the exporter
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the expected behavior and any alternatives
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Session browsing
+        - Preview
+        - Export format
+        - Performance
+        - Cross-platform
+        - Documentation
+        - Other

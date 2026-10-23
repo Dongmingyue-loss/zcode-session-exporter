@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local session exports may contain sensitive conversations.
+exports/
+artifacts/
+test/tmp/
+
+# Build and release output.
+dist/
+build/
+*.egg-info/
+*.zip
+
+# Local databases and SQLite WAL files.
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm
+!demo/demo.sqlite
+
+# Generated export manifests and split parts.
+manifest.json
+*.part[0-9][0-9][0-9].txt
+
+# Logs, OS, IDE.
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

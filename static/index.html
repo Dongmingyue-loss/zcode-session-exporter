@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZCode 会话导出器</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">Z</div>
+        <div>
+          <h1>ZCode 会话导出器</h1>
+          <p>ZCode / ZCodium · 原始消息导出为 TXT</p>
+        </div>
+      </div>
+      <div class="top-status">
+        <span id="status-dot" class="dot"></span>
+        <span id="status-text">连接中</span>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="panel-head">
+        <span>会话</span>
+        <span id="session-count" class="muted"></span>
+      </div>
+      <div id="source-tabs" class="source-tabs"></div>
+      <div class="search-row">
+        <input id="session-search" type="search" placeholder="搜索标题或工作区">
+        <button id="refresh-btn" class="btn small" title="刷新">刷新</button>
+      </div>
+      <div class="search-row">
+        <select id="session-sort" class="grow">
+          <option value="updated">按更新时间</option>
+          <option value="created">按创建时间</option>
+          <option value="messages">按消息数</option>
+          <option value="chars">按字符数</option>
+          <option value="title">按标题</option>
+        </select>
+      </div>
+      <div id="session-list" class="session-list">
+        <div class="empty">正在加载…</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="session-header" class="session-header empty">
+        <div>选择一个会话查看消息</div>
+      </section>
+      <section id="message-view" class="message-view"></section>
+      <nav id="pager" class="pager hidden">
+        <button id="prev-page" class="btn small">上一页</button>
+        <span id="page-info" class="muted"></span>
+        <button id="next-page" class="btn small">下一页</button>
+        <span class="jump">
+          <input id="jump-seq" type="number" min="0" placeholder="消息序号">
+          <button id="jump-btn" class="btn small">跳转</button>
+        </span>
+      </nav>
+    </main>
+
+    <aside class="export-panel">
+      <div class="panel-head"><span>导出</span></div>
+
+      <div class="field">
+        <label for="export-format">格式</label>
+        <select id="export-format">
+          <option value="readable">可读 TXT</option>
+          <option value="raw">原始 JSONL</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>导出显示名</label>
+        <div class="label-inputs">
+          <input id="user-label" type="text" value="USER" placeholder="用户">
+          <input id="agent-label" type="text" value="ASSISTANT" placeholder="Agent">
+          <button id="reset-labels" class="btn small">默认</button>
+        </div>
+        <p class="field-hint">仅影响可读 TXT 的角色名；原始 JSONL 保留原 role。</p>
+      </div>
+
+      <div class="field">
+        <label for="output-dir">输出目录</label>
+        <input id="output-dir" type="text" spellcheck="false">
+      </div>
+
+      <div class="field">
+        <label for="split-mb">单文件上限</label>
+        <div class="inline">
+          <input id="split-mb" type="number" min="0" step="10" value="100">
+          <span class="muted">MB（0 = 不拆分）</span>
+        </div>
+      </div>
+
+      <label class="check"><input id="utf8-bom" type="checkbox"> UTF-8 BOM（记事本兼容）</label>
+
+      <fieldset class="options">
+        <legend>包含内容</legend>
+        <label class="check"><input id="opt-reasoning" type="checkbox" checked> 推理过程</label>
+        <label class="check"><input id="opt-tool-input" type="checkbox" checked> 工具输入</label>
+        <label class="check"><input id="opt-tool-output" type="checkbox" checked> 工具输出</label>
+        <label class="check"><input id="opt-tool-metadata" type="checkbox"> 工具元数据</label>
+        <label class="check"><input id="opt-file-preview" type="checkbox" checked> 文件预览</label>
+        <label class="check"><input id="opt-step-events" type="checkbox"> step 事件</label>
+        <label class="check"><input id="opt-timeline" type="checkbox" checked> 模型切换标记</label>
+        <label class="check"><input id="opt-compaction" type="checkbox" checked> 压缩标记</label>
+        <label class="check"><input id="opt-summary" type="checkbox" checked> 压缩摘要</label>
+        <label class="check"><input id="opt-message-meta" type="checkbox" checked> 消息元数据</label>
+        <label class="check"><input id="opt-binary" type="checkbox"> 原始模式包含二进制</label>
+      </fieldset>
+
+      <div class="export-actions">
+        <button id="preview-export" class="btn">预览导出</button>
+        <button id="export-current" class="btn primary">导出当前会话</button>
+        <button id="export-selected" class="btn">导出选中</button>
+        <button id="export-all" class="btn">导出全部</button>
+      </div>
+
+      <div id="job-card" class="job-card hidden">
+        <div class="job-head">
+          <span id="job-status">等待中</span>
+          <span id="job-id" class="muted"></span>
+        </div>
+        <progress id="job-progress" max="100" value="0"></progress>
+        <div id="job-meta" class="job-meta"></div>
+        <div class="job-actions">
+          <button id="job-cancel" class="btn danger small">取消</button>
+          <button id="job-download" class="btn primary small">下载</button>
+          <button id="job-open" class="btn small">打开目录</button>
+        </div>
+      </div>
+
+      <p class="hint">导出内容包含原始对话、工具输出和文件预览，可能含敏感信息。工具只读源数据库，不会修改 ZCode / ZCodium。</p>
+    </aside>
+  </div>
+
+  <div id="preview-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>导出预览</h2>
+        <button id="preview-close" class="btn small">关闭</button>
+      </div>
+      <div id="preview-meta" class="preview-meta muted"></div>
+      <div class="preview-pager">
+        <button id="preview-prev" class="btn small">上一页</button>
+        <span id="preview-page-info" class="muted"></span>
+        <button id="preview-next" class="btn small">下一页</button>
+        <span class="jump">
+          <input id="preview-jump" type="number" min="1" placeholder="页码">
+          <button id="preview-jump-btn" class="btn small">跳转</button>
+        </span>
+      </div>
+      <pre id="preview-text" class="preview-text"></pre>
+      <div class="modal-actions">
+        <button id="preview-copy" class="btn">复制</button>
+        <button id="preview-confirm" class="btn primary">确认导出</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

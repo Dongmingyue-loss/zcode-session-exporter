@@ -51,31 +51,6 @@ jobs:
           fi
       - name: Generate demo database
         run: python scripts/make_demo_db.py
-      - name: Python probe
-        shell: bash
-        run: |
-          echo "--- version ---"
-          python -u app.py --version
-          echo "--- import ---"
-          python -u -c "import app; print('imported', flush=True)"
-          echo "--- socket/http probe ---"
-          python -u -c "from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler; s=ThreadingHTTPServer(('127.0.0.1',0), BaseHTTPRequestHandler); print('bound', s.server_port, flush=True); s.server_close()"
-          echo "--- direct app ---"
-          python -u app.py --demo --no-open --token testtoken --port 0 --output-dir /tmp/zcode-probe2 &
-          PID=$!
-          sleep 5
-          kill "$PID" || true
-      - name: Startup probe
-        shell: bash
-        run: |
-          python -u app.py --demo --no-open --token testtoken --port 0 --output-dir /tmp/zcode-probe > /tmp/zcode-probe.log 2>&1 &
-          PID=$!
-          sleep 5
-          echo "--- probe log ---"
-          cat /tmp/zcode-probe.log
-          echo "--- process state ---"
-          ps -p "$PID" || true
-          kill "$PID" || true
       - name: Headless browser smoke test
         run: python test/ui_smoke.py
       - name: Upload screenshots

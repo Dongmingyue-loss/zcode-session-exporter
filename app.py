@@ -8,6 +8,7 @@ import json
 import os
 import secrets
 import shutil
+import socketserver
 import sqlite3
 import subprocess
 import sys
@@ -399,6 +400,15 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = False
 
+    def server_bind(self) -> None:
+        # HTTPServer.server_bind() calls socket.getfqdn(), which can block for
+        # tens of seconds on macOS/CI when reverse DNS is slow. The bind address
+        # is always loopback, so the hostname is already known.
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = host
+        self.server_port = port
+
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="ZCode / ZCodium session message exporter")
@@ -427,13 +437,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     sources = build_sources(args)
-    print("debug: sources built", list(sources), flush=True)
     output_dir = Path(args.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    print("debug: output ready", output_dir, flush=True)
     exporter = Exporter(sources, output_dir)
     token = args.token or secrets.token_urlsafe(24)
-    print("debug: exporter/token ready", len(token), flush=True)
 
     server = None
     for port in range(args.port, args.port + 12):
@@ -445,7 +452,6 @@ def main(argv: list[str] | None = None) -> int:
     if server is None:
         print(f"Could not bind a port in {args.port}-{args.port + 11}.", file=sys.stderr)
         return 2
-    print("debug: server bound", server.server_port, flush=True)
 
     server.service = SimpleNamespace(  # type: ignore[attr-defined]
         sources=sources,

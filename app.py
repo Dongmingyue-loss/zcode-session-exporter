@@ -427,10 +427,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     sources = build_sources(args)
+    print("debug: sources built", list(sources), flush=True)
     output_dir = Path(args.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    print("debug: output ready", output_dir, flush=True)
     exporter = Exporter(sources, output_dir)
     token = args.token or secrets.token_urlsafe(24)
+    print("debug: exporter/token ready", len(token), flush=True)
 
     server = None
     for port in range(args.port, args.port + 12):
@@ -442,6 +445,7 @@ def main(argv: list[str] | None = None) -> int:
     if server is None:
         print(f"Could not bind a port in {args.port}-{args.port + 11}.", file=sys.stderr)
         return 2
+    print("debug: server bound", server.server_port, flush=True)
 
     server.service = SimpleNamespace(  # type: ignore[attr-defined]
         sources=sources,

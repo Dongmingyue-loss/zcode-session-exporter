@@ -58,6 +58,8 @@ jobs:
           python -u app.py --version
           echo "--- import ---"
           python -u -c "import app; print('imported', flush=True)"
+          echo "--- socket/http probe ---"
+          python -u -c "from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler; s=ThreadingHTTPServer(('127.0.0.1',0), BaseHTTPRequestHandler); print('bound', s.server_port, flush=True); s.server_close()"
           echo "--- direct app ---"
           python -u app.py --demo --no-open --token testtoken --port 0 --output-dir /tmp/zcode-probe2 &
           PID=$!

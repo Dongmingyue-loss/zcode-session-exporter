@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -66,13 +67,14 @@ def main() -> int:
         "--output-dir",
         str(output_dir),
     ]
+    log_path = output_dir / "server.log"
+    log_handle = log_path.open("w", encoding="utf-8")
     proc = subprocess.Popen(
         command,
         cwd=str(ROOT),
-        stdout=subprocess.PIPE,
+        stdout=log_handle,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1,
     )
 
     server_lines: list[str] = []
@@ -81,19 +83,18 @@ def main() -> int:
     try:
         deadline = time.time() + 30
         while time.time() < deadline:
-            line = proc.stdout.readline()
-            if not line:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.1)
-                continue
-            server_lines.append(line.rstrip())
-            if "URL:" in line:
-                full_url = line.split("URL:", 1)[1].strip()
+            text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
+            server_lines = text.splitlines()
+            match = re.search(r"URL:\s*(\S+)", text)
+            if match:
+                full_url = match.group(1).strip()
                 base = full_url.split("?", 1)[0]
                 break
+            if proc.poll() is not None:
+                break
+            time.sleep(0.2)
         if not base or not full_url:
-            raise RuntimeError("server did not print a URL:\n" + "\n".join(server_lines))
+            raise RuntimeError("server did not print a URL:\n" + "\n".join(server_lines[-40:]))
         wait_for_health(base)
 
         channel = os.environ.get("UI_BROWSER_CHANNEL")
@@ -165,6 +166,10 @@ def main() -> int:
                 proc.kill()
             except Exception:
                 pass
+        try:
+            log_handle.close()
+        except Exception:
+            pass
         shutil.rmtree(output_dir, ignore_errors=True)
 
 

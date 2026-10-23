@@ -51,6 +51,18 @@ jobs:
           fi
       - name: Generate demo database
         run: python scripts/make_demo_db.py
+      - name: Python probe
+        shell: bash
+        run: |
+          echo "--- version ---"
+          python -u app.py --version
+          echo "--- import ---"
+          python -u -c "import app; print('imported', flush=True)"
+          echo "--- direct app ---"
+          python -u app.py --demo --no-open --token testtoken --port 0 --output-dir /tmp/zcode-probe2 &
+          PID=$!
+          sleep 5
+          kill "$PID" || true
       - name: Startup probe
         shell: bash
         run: |

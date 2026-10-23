@@ -51,6 +51,17 @@ jobs:
           fi
       - name: Generate demo database
         run: python scripts/make_demo_db.py
+      - name: Startup probe
+        shell: bash
+        run: |
+          python -u app.py --demo --no-open --token testtoken --port 0 --output-dir /tmp/zcode-probe > /tmp/zcode-probe.log 2>&1 &
+          PID=$!
+          sleep 5
+          echo "--- probe log ---"
+          cat /tmp/zcode-probe.log
+          echo "--- process state ---"
+          ps -p "$PID" || true
+          kill "$PID" || true
       - name: Headless browser smoke test
         run: python test/ui_smoke.py
       - name: Upload screenshots

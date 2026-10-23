@@ -450,14 +450,16 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     url = f"http://127.0.0.1:{server.server_port}/?token={token}"
-    print("ZCode / ZCodium Session Exporter")
+    print("ZCode / ZCodium Session Exporter", flush=True)
     for source in sources.values():
+        print(f"  checking {source.label}...", flush=True)
         info = source.validate()
+        print(f"  checked {source.label}: {info}", flush=True)
         state = "OK" if info.exists and not info.error else f"UNAVAILABLE: {info.error}"
-        print(f"  {source.label}: {source.db_path} ({state})")
-    print(f"  Output: {output_dir}")
-    print(f"  URL: {url}")
-    print("Press Ctrl+C to stop.")
+        print(f"  {source.label}: {source.db_path} ({state})", flush=True)
+    print(f"  Output: {output_dir}", flush=True)
+    print(f"  URL: {url}", flush=True)
+    print("Press Ctrl+C to stop.", flush=True)
 
     if not args.no_open:
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()
